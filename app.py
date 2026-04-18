@@ -51,8 +51,6 @@ def conversations():
 @app.route('/webhook/venio', methods=['POST'])
 def webhook():
     data = request.get_json(silent=True) or {}
-    import logging
-    logging.warning(f"WEBHOOK DATA: {data}")
     topic = data.get('Topic', '')
     event = data.get('Event', '')
 
@@ -64,8 +62,6 @@ def webhook():
         content = msg.get('Content', '')
         user = msg.get('User', {})
         customer_name = user.get('OriginalName', '')
-        mobile = user.get('MobileNo', '')
-        email = user.get('Email', '')
 
         con = sqlite3.connect(DB)
         existing = con.execute('SELECT * FROM chats WHERE room_id=?', (room_id,)).fetchone()
@@ -73,19 +69,19 @@ def webhook():
 
         if existing:
             con.execute('''UPDATE chats SET
-                last_message=?, last_message_time=?, status='unanswered'
+                last_message=?, last_message_time=?, status="unanswered"
                 WHERE room_id=?''', (content, now, room_id))
         else:
             con.execute('''INSERT INTO chats
                 (id, room_id, platform, customer_name, last_message, last_message_time, status, created_at)
-                VALUES (?,?,?,?,?,?,'unanswered',?)''',
+                VALUES (?,?,?,?,?,?,"unanswered",?)''',
                 (room_id, room_id, platform, customer_name, content, now, now))
 
         con.commit()
         con.close()
 
     return jsonify({'ok': True}), 200
-   
+    
 @app.route('/api/chats', methods=['GET'])
 def get_chats():
     con = sqlite3.connect(DB)
