@@ -51,6 +51,8 @@ def conversations():
 @app.route('/webhook/venio', methods=['POST'])
 def webhook():
     data = request.get_json(silent=True) or {}
+    import logging
+    logging.warning(f"WEBHOOK DATA: {data}")
     topic = data.get('topic', '')
     event = data.get('event', '')
 
