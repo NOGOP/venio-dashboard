@@ -6,12 +6,15 @@
 <title>Venio Follow-up Dashboard</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&display=swap');
-:root{--bg:#f7f6f2;--surface:#fff;--surface2:#f0efe9;--border:#e2e0d8;--text:#1a1917;--text2:#6b6960;--text3:#9b9a94;--red:#c0392b;--red-bg:#fdf0ef;--amber:#c47c1a;--amber-bg:#fef8ee;--blue:#1a6fa8;--blue-bg:#eef5fb}
+:root{--bg:#f7f6f2;--surface:#fff;--surface2:#f0efe9;--border:#e2e0d8;--text:#1a1917;--text2:#6b6960;--text3:#9b9a94;--red:#c0392b;--red-bg:#fdf0ef;--amber:#c47c1a;--amber-bg:#fef8ee;--blue:#1a6fa8;--blue-bg:#eef5fb;--green:#1e7e4a;--green-bg:#eef7f2}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
-header{background:#1a1917;color:#fff;padding:16px 32px}
-header h1{font-size:16px;font-weight:500}
+header{background:#1a1917;color:#fff;padding:16px 32px;display:flex;align-items:center;gap:16px}
+header h1{font-size:16px;font-weight:500;flex:1}
 header span{font-size:12px;opacity:.5}
+.main-tabs{display:flex;background:#111;border-bottom:1px solid #333}
+.main-tab{font-family:'Sarabun',sans-serif;font-size:13px;padding:12px 24px;cursor:pointer;border:none;background:transparent;color:rgba(255,255,255,.5);transition:all .15s;border-bottom:2px solid transparent}
+.main-tab.on{color:#fff;border-bottom-color:#fff}
 .main{max-width:1280px;margin:0 auto;padding:24px 32px}
 .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
 .field{display:flex;flex-direction:column;gap:4px}
@@ -48,24 +51,41 @@ tr.warn td{background:#fffbf4}
 .br{background:var(--red-bg);color:var(--red)}
 .bo{background:var(--amber-bg);color:var(--amber)}
 .bb{background:var(--blue-bg);color:var(--blue)}
+.bg{background:var(--surface2);color:var(--text2)}
+.bgreen{background:var(--green-bg);color:var(--green)}
 .empty{text-align:center;padding:48px;color:var(--text3);font-size:13px}
 .sbar{font-size:11px;color:var(--text3);margin-top:8px;display:flex;align-items:center;gap:8px}
 .dot{width:6px;height:6px;border-radius:50%;background:var(--text3);display:inline-block}
-.dot.ok{background:#1e7e4a}
+.dot.ok{background:var(--green)}
 .dot.err{background:var(--red)}
 .sumbox{margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;display:none}
 .sumbox.show{display:block}
 .sumtext{background:var(--surface2);border-radius:8px;padding:12px 16px;font-size:12px;line-height:1.9;white-space:pre-wrap;font-family:monospace;margin-top:12px}
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:#1a1917;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:768px){.main{padding:16px}.kpis{grid-template-columns:repeat(2,1fr)}}
+.page{display:none}
+.page.on{display:block}
+.chat-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:20px}
+.refresh-note{font-size:11px;color:var(--text3);margin-top:4px}
+.platform-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px}
+.line-badge{background:#06c755;color:#fff}
+.fb-badge{background:#0866ff;color:#fff}
+@media(max-width:768px){.main{padding:16px}.kpis,.chat-kpis{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
 <header>
   <h1>Venio Follow-up Dashboard</h1>
-  <span>วิริยะโลหะกิจ จำกัด — Sales Follow-up Tracker</span>
+  <span>วิริยะโลหะกิจ จำกัด</span>
 </header>
+
+<div class="main-tabs">
+  <button class="main-tab on" onclick="showPage('conv',this)">Conversation Log</button>
+  <button class="main-tab" onclick="showPage('chat',this)">Chat Inbox (Live)</button>
+</div>
+
+<!-- PAGE: Conversation -->
+<div class="page on" id="page-conv">
 <div class="main">
   <div class="panel">
     <div class="field grow">
@@ -80,7 +100,7 @@ tr.warn td{background:#fffbf4}
       <label>วันที่สิ้นสุด</label>
       <input type="date" id="de">
     </div>
-    <button class="btn p" id="loadBtn" onclick="load()">ดึงข้อมูล Venio</button>
+    <button class="btn p" id="loadBtn" onclick="loadConv()">ดึงข้อมูล Venio</button>
     <button class="btn" onclick="doExport()">Export CSV</button>
     <button class="btn" onclick="toggleSum()">สรุปผู้จัดการ</button>
   </div>
@@ -97,70 +117,227 @@ tr.warn td{background:#fffbf4}
       <button class="tab" onclick="setTab('B',this)">ไม่มี Deal — f/u เลย</button>
       <button class="tab" onclick="setTab('C',this)">ไม่มีนัด / ติดไม่ได้</button>
     </div>
-    <input class="search" id="srch" placeholder="ค้นหาชื่อลูกค้า / พนักงาน..." oninput="render()">
+    <input class="search" id="srch" placeholder="ค้นหาชื่อลูกค้า / พนักงาน..." oninput="renderConv()">
   </div>
   <div class="tbl-wrap">
     <table>
       <thead><tr>
-        <th style="width:24%">ลูกค้า</th>
-        <th style="width:13%">พนักงาน</th>
-        <th style="width:8%">ช่องทาง</th>
-        <th style="width:14%">กลุ่ม</th>
-        <th style="width:11%">ผลล่าสุด</th>
-        <th style="width:10%">นัด f/u</th>
-        <th style="width:7%">ค้าง</th>
-        <th style="width:13%">หมายเหตุ</th>
+        <th style="width:24%">ลูกค้า</th><th style="width:13%">พนักงาน</th>
+        <th style="width:8%">ช่องทาง</th><th style="width:14%">กลุ่ม</th>
+        <th style="width:11%">ผลล่าสุด</th><th style="width:10%">นัด f/u</th>
+        <th style="width:7%">ค้าง</th><th style="width:13%">หมายเหตุ</th>
       </tr></thead>
-      <tbody id="tb"><tr><td colspan="8" class="empty">กรอก token แล้วกด "ดึงข้อมูล Venio"</td></tr></tbody>
+      <tbody id="conv-tb"><tr><td colspan="8" class="empty">กรอก token แล้วกด "ดึงข้อมูล Venio"</td></tr></tbody>
     </table>
   </div>
-  <div class="sbar"><span class="dot" id="dot"></span><span id="sb">พร้อมใช้งาน</span></div>
+  <div class="sbar"><span class="dot" id="conv-dot"></span><span id="conv-sb">พร้อมใช้งาน</span></div>
   <div class="sumbox" id="sumbox">
     <h3 style="font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">สรุปสำหรับผู้จัดการฝ่ายขาย</h3>
     <div class="sumtext" id="sumtext"></div>
     <button class="btn" style="margin-top:10px" onclick="copySum()">Copy ข้อความ</button>
   </div>
 </div>
+</div>
+
+<!-- PAGE: Chat Inbox -->
+<div class="page" id="page-chat">
+<div class="main">
+  <div class="panel" style="justify-content:space-between">
+    <div>
+      <div style="font-size:15px;font-weight:500;margin-bottom:4px">Chat Inbox Live</div>
+      <div class="refresh-note">อัปเดตอัตโนมัติทุก 30 วินาที — chat จาก LINE / Messenger ผ่าน Webhook</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <label style="font-size:12px;color:var(--text2)">แจ้งเตือนเมื่อค้างเกิน</label>
+      <input type="number" id="alertDays" value="3" min="1" style="width:60px;font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:8px">
+      <label style="font-size:12px;color:var(--text2)">วัน</label>
+      <button class="btn p" onclick="loadChats()">Refresh</button>
+    </div>
+  </div>
+
+  <div class="chat-kpis">
+    <div class="kpi k1"><div class="n" id="ck1">—</div><div class="l">ยังไม่มีคนตอบ</div></div>
+    <div class="kpi k2"><div class="n" id="ck2">—</div><div class="l">ค้างเกินกำหนด</div></div>
+    <div class="kpi k3"><div class="n" id="ck3">—</div><div class="l">ทั้งหมดใน inbox</div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="tabs">
+      <button class="tab on" onclick="setChatTab('all',this)">ทั้งหมด</button>
+      <button class="tab" onclick="setChatTab('unanswered',this)">ยังไม่ตอบ</button>
+      <button class="tab" onclick="setChatTab('answered',this)">ตอบแล้ว</button>
+    </div>
+    <input class="search" id="chat-srch" placeholder="ค้นชื่อลูกค้า..." oninput="renderChats()">
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th style="width:22%">ลูกค้า</th>
+        <th style="width:10%">Platform</th>
+        <th style="width:35%">ข้อความล่าสุด</th>
+        <th style="width:13%">เวลา</th>
+        <th style="width:10%">สถานะ</th>
+        <th style="width:10%">ค้าง</th>
+      </tr></thead>
+      <tbody id="chat-tb"><tr><td colspan="6" class="empty">กำลังโหลด...</td></tr></tbody>
+    </table>
+  </div>
+  <div class="sbar"><span class="dot" id="chat-dot"></span><span id="chat-sb">กำลังโหลด chat inbox...</span></div>
+</div>
+</div>
+
 <script>
 const NOW=new Date();
-let all=[],activeTab='all';
+let convAll=[],convTab='all';
+let chatAll=[],chatTab='all';
+let chatTimer=null;
 document.getElementById('de').value=NOW.toISOString().slice(0,10);
-function classify(c){const noFU=!c.dateFollowUp;const fu=c.dateFollowUp?new Date(c.dateFollowUp):null;const fuPast=fu&&fu<NOW;const noAns=['No Answer','Not respond'].includes(c.outcomeName);if(c.actionName==='Unqualifed')return null;if(c.dealId&&fuPast)return 'A';if(!c.dealId&&fuPast)return 'B';if(noFU||noAns)return 'C';return null;}
+
+function showPage(p,el){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.main-tab').forEach(x=>x.classList.remove('on'));
+  document.getElementById('page-'+p).classList.add('on');
+  el.classList.add('on');
+  if(p==='chat'){loadChats();if(!chatTimer)chatTimer=setInterval(loadChats,30000);}
+  else{if(chatTimer){clearInterval(chatTimer);chatTimer=null;}}
+}
+
+/* ===== CONVERSATION ===== */
+function classify(c){
+  const noFU=!c.dateFollowUp;
+  const fu=c.dateFollowUp?new Date(c.dateFollowUp):null;
+  const fuPast=fu&&fu<NOW;
+  const noAns=['No Answer','Not respond'].includes(c.outcomeName);
+  if(c.actionName==='Unqualifed')return null;
+  if(c.dealId&&fuPast)return 'A';
+  if(!c.dealId&&fuPast)return 'B';
+  if(noFU||noAns)return 'C';
+  return null;
+}
 const GRP={A:{label:'มี Deal — f/u เลย',cls:'br'},B:{label:'ไม่มี Deal — f/u เลย',cls:'bo'},C:{label:'ไม่มีนัด / ติดไม่ได้',cls:'bb'}};
 function daysPast(d){if(!d)return null;const diff=Math.floor((NOW-new Date(d))/86400000);return diff>0?diff:null;}
-async function load(){
+
+async function loadConv(){
   const tok=document.getElementById('tok').value.trim();
-  if(!tok){setStatus('กรุณากรอก token ก่อน','err');return;}
-  const ds=document.getElementById('ds').value;const de=document.getElementById('de').value;
-  const btn=document.getElementById('loadBtn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span> กำลังดึง...';
-  setStatus('กำลังเชื่อมต่อ...','');
-  document.getElementById('tb').innerHTML='<tr><td colspan="8" class="empty">กำลังโหลด...</td></tr>';
+  if(!tok){setConvStatus('กรุณากรอก token ก่อน','err');return;}
+  const ds=document.getElementById('ds').value;
+  const de=document.getElementById('de').value;
+  const btn=document.getElementById('loadBtn');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> กำลังดึง...';
+  setConvStatus('กำลังเชื่อมต่อ...','');
+  document.getElementById('conv-tb').innerHTML='<tr><td colspan="8" class="empty">กำลังโหลด...</td></tr>';
   try{
     const res=await fetch('/api/conversations',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({dateStart:ds,dateEnd:de})});
-    if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.message||'HTTP '+res.status);}
-    const j=await res.json();const raw=j?.data?.value?.data||[];
-    all=raw.map(c=>({...c,_g:classify(c)})).filter(c=>c._g);
-    setStatus('ดึงข้อมูลสำเร็จ — '+raw.length+' conversations | ต้องติดตาม '+all.length+' รายการ','ok');render();
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const j=await res.json();
+    const raw=j?.data?.value?.data||[];
+    convAll=raw.map(c=>({...c,_g:classify(c)})).filter(c=>c._g);
+    setConvStatus('ดึงข้อมูลสำเร็จ — '+raw.length+' conversations | ต้องติดตาม '+convAll.length+' รายการ','ok');
+    renderConv();
   }catch(e){
-    setStatus('เกิดข้อผิดพลาด: '+e.message,'err');
-    document.getElementById('tb').innerHTML='<tr><td colspan="8" class="empty">ดึงข้อมูลไม่ได้ — ตรวจสอบ token</td></tr>';
+    setConvStatus('เกิดข้อผิดพลาด: '+e.message,'err');
+    document.getElementById('conv-tb').innerHTML='<tr><td colspan="8" class="empty">ดึงข้อมูลไม่ได้</td></tr>';
   }finally{btn.disabled=false;btn.textContent='ดึงข้อมูล Venio';}
 }
-function setStatus(msg,type){document.getElementById('sb').textContent=msg;document.getElementById('dot').className='dot'+(type?' '+type:'');}
-function setTab(t,el){activeTab=t;document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));el.classList.add('on');render();}
-function getFiltered(){const q=document.getElementById('srch').value.toLowerCase();return all.filter(r=>{if(activeTab!=='all'&&r._g!==activeTab)return false;if(q&&!(r.customerName||'').toLowerCase().includes(q)&&!(r.fullname||'').toLowerCase().includes(q))return false;return true;}).sort((a,b)=>{const da=a.dateFollowUp?new Date(a.dateFollowUp):new Date(9e15);const db=b.dateFollowUp?new Date(b.dateFollowUp):new Date(9e15);return da-db;});}
-function render(){
-  const rows=getFiltered();
-  document.getElementById('k0').textContent=all.length;
-  document.getElementById('k1').textContent=all.filter(r=>r._g==='A').length;
-  document.getElementById('k2').textContent=all.filter(r=>r._g==='B').length;
-  document.getElementById('k3').textContent=all.filter(r=>r._g==='C').length;
-  if(!rows.length){document.getElementById('tb').innerHTML='<tr><td colspan="8" class="empty">ไม่มีข้อมูล</td></tr>';return;}
-  document.getElementById('tb').innerHTML=rows.map(r=>{const g=GRP[r._g];const days=r.dateFollowUp?daysPast(r.dateFollowUp):null;const urg=days!==null&&days>=7;const warn=days!==null&&days>0&&days<7;const fuStr=r.dateFollowUp?r.dateFollowUp.slice(0,10):'—';const daysStr=days?'<span style="color:var(--red);font-size:11px;font-weight:500">'+days+' วัน</span>':'—';const note=(r.description||'').slice(0,30)+((r.description||'').length>30?'…':'');const name=(r.customerName||'').trim();return '<tr class="'+(urg?'urg':warn?'warn':'')+'"><td title="'+name+'">'+name+'</td><td>'+(r.fullname||'')+'</td><td>'+(r.typeName||'—')+'</td><td><span class="badge '+g.cls+'">'+g.label+'</span></td><td style="font-size:12px;color:var(--text2)">'+(r.outcomeName||'—')+'</td><td style="font-size:12px">'+fuStr+'</td><td>'+daysStr+'</td><td title="'+(r.description||'')+'" style="font-size:12px;color:var(--text2)">'+note+'</td></tr>';}).join('');
+function setConvStatus(msg,type){document.getElementById('conv-sb').textContent=msg;document.getElementById('conv-dot').className='dot'+(type?' '+type:'');}
+function setTab(t,el){convTab=t;document.querySelectorAll('#page-conv .tab').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderConv();}
+function getConvFiltered(){
+  const q=document.getElementById('srch').value.toLowerCase();
+  return convAll.filter(r=>{
+    if(convTab!=='all'&&r._g!==convTab)return false;
+    if(q&&!(r.customerName||'').toLowerCase().includes(q)&&!(r.fullname||'').toLowerCase().includes(q))return false;
+    return true;
+  }).sort((a,b)=>{
+    const da=a.dateFollowUp?new Date(a.dateFollowUp):new Date(9e15);
+    const db=b.dateFollowUp?new Date(b.dateFollowUp):new Date(9e15);
+    return da-db;
+  });
 }
-function toggleSum(){const b=document.getElementById('sumbox');b.classList.toggle('show');if(!b.classList.contains('show'))return;const A=all.filter(r=>r._g==='A').sort((a,b)=>new Date(a.dateFollowUp)-new Date(b.dateFollowUp));const B=all.filter(r=>r._g==='B').sort((a,b)=>new Date(a.dateFollowUp)-new Date(b.dateFollowUp));const C=all.filter(r=>r._g==='C');const sm={};all.forEach(r=>{sm[r.fullname]=(sm[r.fullname]||0)+1;});const top=Object.entries(sm).sort((a,b)=>b[1]-a[1]);const date=NOW.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});const fmt=arr=>arr.slice(0,10).map(r=>'  • '+(r.customerName||'').trim()+' ('+r.fullname+') — นัด '+(r.dateFollowUp?.slice(0,10)||'ไม่มี')+(daysPast(r.dateFollowUp)?' ค้าง '+daysPast(r.dateFollowUp)+' วัน':'')).join('\n')+(arr.length>10?'\n  ...และอีก '+(arr.length-10)+' ราย':'');document.getElementById('sumtext').textContent='สรุปผู้จัดการฝ่ายขาย — '+date+'\n\n🔴 มี Deal แต่ f/u เลยมาแล้ว ('+A.length+' ราย)\n'+(fmt(A)||'  — ไม่มี')+'\n\n🟡 ไม่มี Deal แต่ f/u เลยมาแล้ว ('+B.length+' ราย)\n'+(fmt(B)||'  — ไม่มี')+'\n\n🔵 ไม่มีนัด f/u / ติดต่อไม่ได้ล่าสุด ('+C.length+' ราย)\n'+(fmt(C)||'  — ไม่มี')+'\n\n👤 พนักงาน (แชทค้างทั้งหมด)\n'+top.map(([s,n])=>'  • '+s+': '+n+' แชท').join('\n');}
+function renderConv(){
+  const rows=getConvFiltered();
+  document.getElementById('k0').textContent=convAll.length;
+  document.getElementById('k1').textContent=convAll.filter(r=>r._g==='A').length;
+  document.getElementById('k2').textContent=convAll.filter(r=>r._g==='B').length;
+  document.getElementById('k3').textContent=convAll.filter(r=>r._g==='C').length;
+  if(!rows.length){document.getElementById('conv-tb').innerHTML='<tr><td colspan="8" class="empty">ไม่มีข้อมูล</td></tr>';return;}
+  document.getElementById('conv-tb').innerHTML=rows.map(r=>{
+    const g=GRP[r._g];
+    const days=r.dateFollowUp?daysPast(r.dateFollowUp):null;
+    const urg=days!==null&&days>=7,warn=days!==null&&days>0&&days<7;
+    const fuStr=r.dateFollowUp?r.dateFollowUp.slice(0,10):'—';
+    const daysStr=days?'<span style="color:var(--red);font-size:11px;font-weight:500">'+days+' วัน</span>':'—';
+    const note=(r.description||'').slice(0,30)+((r.description||'').length>30?'…':'');
+    const name=(r.customerName||'').trim();
+    return '<tr class="'+(urg?'urg':warn?'warn':'')+'"><td title="'+name+'">'+name+'</td><td>'+(r.fullname||'')+'</td><td>'+(r.typeName||'—')+'</td><td><span class="badge '+g.cls+'">'+g.label+'</span></td><td style="font-size:12px;color:var(--text2)">'+(r.outcomeName||'—')+'</td><td style="font-size:12px">'+fuStr+'</td><td>'+daysStr+'</td><td title="'+(r.description||'')+'" style="font-size:12px;color:var(--text2)">'+note+'</td></tr>';
+  }).join('');
+}
+function toggleSum(){
+  const b=document.getElementById('sumbox');b.classList.toggle('show');
+  if(!b.classList.contains('show'))return;
+  const A=convAll.filter(r=>r._g==='A').sort((a,b)=>new Date(a.dateFollowUp)-new Date(b.dateFollowUp));
+  const B=convAll.filter(r=>r._g==='B').sort((a,b)=>new Date(a.dateFollowUp)-new Date(b.dateFollowUp));
+  const C=convAll.filter(r=>r._g==='C');
+  const sm={};convAll.forEach(r=>{sm[r.fullname]=(sm[r.fullname]||0)+1;});
+  const top=Object.entries(sm).sort((a,b)=>b[1]-a[1]);
+  const date=NOW.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
+  const fmt=arr=>arr.slice(0,10).map(r=>'  • '+(r.customerName||'').trim()+' ('+r.fullname+') — นัด '+(r.dateFollowUp?.slice(0,10)||'ไม่มี')+(daysPast(r.dateFollowUp)?' ค้าง '+daysPast(r.dateFollowUp)+' วัน':'')).join('\n')+(arr.length>10?'\n  ...และอีก '+(arr.length-10)+' ราย':'');
+  document.getElementById('sumtext').textContent='สรุปผู้จัดการฝ่ายขาย — '+date+'\n\n🔴 มี Deal แต่ f/u เลยมาแล้ว ('+A.length+' ราย)\n'+(fmt(A)||'  — ไม่มี')+'\n\n🟡 ไม่มี Deal แต่ f/u เลยมาแล้ว ('+B.length+' ราย)\n'+(fmt(B)||'  — ไม่มี')+'\n\n🔵 ไม่มีนัด f/u / ติดต่อไม่ได้ล่าสุด ('+C.length+' ราย)\n'+(fmt(C)||'  — ไม่มี')+'\n\n👤 พนักงาน (แชทค้างทั้งหมด)\n'+top.map(([s,n])=>'  • '+s+': '+n+' แชท').join('\n');
+}
 function copySum(){navigator.clipboard.writeText(document.getElementById('sumtext').textContent).then(()=>{const btn=event.target;btn.textContent='Copied!';setTimeout(()=>{btn.textContent='Copy ข้อความ';},2000);});}
-function doExport(){if(!all.length){alert('ยังไม่มีข้อมูล');return;}const rows=getFiltered();const hdr=['ลูกค้า','พนักงาน','ช่องทาง','กลุ่ม','ผลล่าสุด','นัด f/u','ค้าง(วัน)','dealId','หมายเหตุ'];const lines=rows.map(r=>{const days=r.dateFollowUp?daysPast(r.dateFollowUp):'';return[(r.customerName||'').trim(),r.fullname||'',r.typeName||'',GRP[r._g]?.label||'',r.outcomeName||'',r.dateFollowUp?.slice(0,10)||'',days||'',r.dealId||'',r.description||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',');});const csv='\uFEFF'+[hdr.join(','),...lines].join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='venio_followup_'+NOW.toISOString().slice(0,10)+'.csv';a.click();}
+function doExport(){
+  if(!convAll.length){alert('ยังไม่มีข้อมูล');return;}
+  const rows=getConvFiltered();
+  const hdr=['ลูกค้า','พนักงาน','ช่องทาง','กลุ่ม','ผลล่าสุด','นัด f/u','ค้าง(วัน)','dealId','หมายเหตุ'];
+  const lines=rows.map(r=>{const days=r.dateFollowUp?daysPast(r.dateFollowUp):'';return[(r.customerName||'').trim(),r.fullname||'',r.typeName||'',GRP[r._g]?.label||'',r.outcomeName||'',r.dateFollowUp?.slice(0,10)||'',days||'',r.dealId||'',r.description||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',');});
+  const csv='\uFEFF'+[hdr.join(','),...lines].join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='venio_conv_'+NOW.toISOString().slice(0,10)+'.csv';a.click();
+}
+
+/* ===== CHAT INBOX ===== */
+async function loadChats(){
+  try{
+    const res=await fetch('/api/chats');
+    chatAll=await res.json();
+    document.getElementById('chat-dot').className='dot ok';
+    document.getElementById('chat-sb').textContent='อัปเดตล่าสุด: '+new Date().toLocaleTimeString('th-TH');
+    renderChats();
+  }catch(e){
+    document.getElementById('chat-dot').className='dot err';
+    document.getElementById('chat-sb').textContent='ดึงข้อมูลไม่ได้: '+e.message;
+  }
+}
+function setChatTab(t,el){chatTab=t;document.querySelectorAll('#page-chat .tab').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderChats();}
+function chatDaysPast(d){if(!d)return null;const diff=Math.floor((NOW-new Date(d))/86400000);return diff>0?diff:null;}
+function renderChats(){
+  const alertDays=parseInt(document.getElementById('alertDays').value)||3;
+  const q=document.getElementById('chat-srch').value.toLowerCase();
+  let rows=chatAll.filter(r=>{
+    if(chatTab!=='all'&&r.status!==chatTab)return false;
+    if(q&&!(r.customer_name||'').toLowerCase().includes(q))return false;
+    return true;
+  }).sort((a,b)=>new Date(b.last_message_time)-new Date(a.last_message_time));
+
+  const unanswered=chatAll.filter(r=>r.status==='unanswered').length;
+  const overdue=chatAll.filter(r=>{const d=chatDaysPast(r.last_message_time);return d!==null&&d>=alertDays;}).length;
+  document.getElementById('ck1').textContent=unanswered;
+  document.getElementById('ck2').textContent=overdue;
+  document.getElementById('ck3').textContent=chatAll.length;
+
+  if(!rows.length){document.getElementById('chat-tb').innerHTML='<tr><td colspan="6" class="empty">ไม่มีข้อมูลใน inbox</td></tr>';return;}
+  document.getElementById('chat-tb').innerHTML=rows.map(r=>{
+    const days=chatDaysPast(r.last_message_time);
+    const urg=days!==null&&days>=alertDays;
+    const warn=days!==null&&days>0&&days<alertDays;
+    const platBadge=r.platform==='line'?'<span class="platform-badge line-badge">LINE</span>':'<span class="platform-badge fb-badge">Messenger</span>';
+    const statusBadge=r.status==='unanswered'?'<span class="badge br">ยังไม่ตอบ</span>':'<span class="badge bgreen">ตอบแล้ว</span>';
+    const timeStr=r.last_message_time?new Date(r.last_message_time).toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+    const daysStr=days?'<span style="color:'+(urg?'var(--red)':'var(--amber)')+';font-size:11px;font-weight:500">'+days+' วัน</span>':'วันนี้';
+    return '<tr class="'+(urg?'urg':warn?'warn':'')+'"><td>'+(r.customer_name||'ไม่ทราบชื่อ')+'</td><td>'+platBadge+'</td><td style="color:var(--text2);font-size:12px" title="'+(r.last_message||'')+'">'+(r.last_message||'—').slice(0,50)+'</td><td style="font-size:11px;color:var(--text2)">'+timeStr+'</td><td>'+statusBadge+'</td><td>'+daysStr+'</td></tr>';
+  }).join('');
+}
+
+loadChats();
 </script>
 </body>
 </html>
