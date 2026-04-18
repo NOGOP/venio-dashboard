@@ -53,45 +53,39 @@ def webhook():
     data = request.get_json(silent=True) or {}
     import logging
     logging.warning(f"WEBHOOK DATA: {data}")
-    topic = data.get('topic', '')
-    event = data.get('event', '')
+    topic = data.get('Topic', '')
+    event = data.get('Event', '')
 
     if topic == 'Chat' and event == 'Message':
-        msg = data.get('data', {}).get('ChatMessage', {})
-        room_id = msg.get('roomId', '')
-        platform = msg.get('platform', '')
-        content = msg.get('content', '')
-        timestamp = msg.get('timestamp', '')
-        user = msg.get('user', {})
-        user_type = user.get('type', '')
-        user_name = user.get('displayName', '')
+        msg = data.get('Data', {}).get('ChatMessage', {})
+        room_id = msg.get('RoomId', '')
+        platform_num = msg.get('Platform', 0)
+        platform = 'line' if platform_num == 1 else 'messenger'
+        content = msg.get('Content', '')
+        user = msg.get('User', {})
+        customer_name = user.get('OriginalName', '')
+        mobile = user.get('MobileNo', '')
+        email = user.get('Email', '')
 
         con = sqlite3.connect(DB)
         existing = con.execute('SELECT * FROM chats WHERE room_id=?', (room_id,)).fetchone()
-
         now = datetime.utcnow().isoformat()
 
-        if user_type == 'customer':
-            if existing:
-                con.execute('''UPDATE chats SET
-                    last_message=?, last_message_time=?, status='unanswered'
-                    WHERE room_id=?''', (content, now, room_id))
-            else:
-                con.execute('''INSERT INTO chats
-                    (id, room_id, platform, customer_name, last_message, last_message_time, status, created_at)
-                    VALUES (?,?,?,?,?,?,'unanswered',?)''',
-                    (room_id, room_id, platform, user_name, content, now, now))
-        elif user_type == 'agent':
-            if existing:
-                con.execute('''UPDATE chats SET
-                    last_reply_time=?, staff_name=?, status='answered'
-                    WHERE room_id=?''', (now, user_name, room_id))
+        if existing:
+            con.execute('''UPDATE chats SET
+                last_message=?, last_message_time=?, status='unanswered'
+                WHERE room_id=?''', (content, now, room_id))
+        else:
+            con.execute('''INSERT INTO chats
+                (id, room_id, platform, customer_name, last_message, last_message_time, status, created_at)
+                VALUES (?,?,?,?,?,?,'unanswered',?)''',
+                (room_id, room_id, platform, customer_name, content, now, now))
 
         con.commit()
         con.close()
 
     return jsonify({'ok': True}), 200
-
+   
 @app.route('/api/chats', methods=['GET'])
 def get_chats():
     con = sqlite3.connect(DB)
