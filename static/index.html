@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Venio Follow-up Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&display=swap');
+:root{--bg:#f7f6f2;--surface:#fff;--surface2:#f0efe9;--border:#e2e0d8;--text:#1a1917;--text2:#6b6960;--text3:#9b9a94;--red:#c0392b;--red-bg:#fdf0ef;--amber:#c47c1a;--amber-bg:#fef8ee;--blue:#1a6fa8;--blue-bg:#eef5fb}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+header{background:#1a1917;color:#fff;padding:16px 32px}
+header h1{font-size:16px;font-weight:500}
+header span{font-size:12px;opacity:.5}
+.main{max-width:1280px;margin:0 auto;padding:24px 32px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+.field input{font-family:'Sarabun',sans-serif;font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);outline:none}
+.field input:focus{border-color:#1a1917}
+.field.grow{flex:1;min-width:240px}
+.btn{font-family:'Sarabun',sans-serif;font-size:13px;font-weight:500;padding:8px 18px;border-radius:8px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);white-space:nowrap}
+.btn:hover{background:var(--border)}
+.btn.p{background:#1a1917;color:#fff;border-color:#1a1917}
+.btn.p:hover{opacity:.85}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px}
+.kpi .n{font-size:32px;font-weight:300;line-height:1;margin-bottom:6px}
+.kpi .l{font-size:11px;color:var(--text2);line-height:1.4}
+.kpi.k1 .n{color:var(--red)}
+.kpi.k2 .n{color:var(--amber)}
+.kpi.k3 .n{color:var(--blue)}
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.tabs{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tab{font-family:'Sarabun',sans-serif;font-size:12px;padding:7px 14px;cursor:pointer;border:none;background:transparent;color:var(--text2);white-space:nowrap}
+.tab.on{background:#1a1917;color:#fff;font-weight:500}
+.search{font-family:'Sarabun',sans-serif;font-size:13px;padding:7px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;width:220px}
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--surface2);text-align:left;padding:10px 14px;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+tr.urg td{background:#fff8f8}
+tr.warn td{background:#fffbf4}
+.badge{display:inline-block;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.br{background:var(--red-bg);color:var(--red)}
+.bo{background:var(--amber-bg);color:var(--amber)}
+.bb{background:var(--blue-bg);color:var(--blue)}
+.empty{text-align:center;padding:48px;color:var(--text3);font-size:13px}
+.sbar{font-size:11px;color:var(--text3);margin-top:8px;display:flex;align-items:center;gap:8px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--text3);display:inline-block}
+.dot.ok{background:#1e7e4a}
+.dot.err{background:var(--red)}
+.sumbox{margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;display:none}
+.sumbox.show{display:block}
+.sumtext{background:var(--surface2);border-radius:8px;padding:12px 16px;font-size:12px;line-height:1.9;white-space:pre-wrap;font-family:monospace;margin-top:12px}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:#1a1917;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:768px){.main{padding:16px}.kpis{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Venio Follow-up Dashboard</h1>
+  <span>วิริยะโลหะกิจ จำกัด — Sales Follow-up Tracker</span>
+</header>
+<div class="main">
+  <div class="panel">
+    <div class="field grow">
+      <label>Bearer Token (จาก Postman)</label>
+      <input type="password" id="tok" placeholder="วาง access_token...">
+    </div>
+    <div class="field">
+      <label>วันที่เริ่ม</label>
+      <input type="date" id="ds" value="2025-01-01">
+    </div>
+    <div class="field">
+      <label>วันที่สิ้นสุด</label>
+      <input type="date" id="de">
+    </div>
+    <button class="btn p" id="loadBtn" onclick="load()">ดึงข้อมูล Venio</button>
+    <button class="btn" onclick="doExport()">Export CSV</button>
+    <button class="btn" onclick="toggleSum()">สรุปผู้จัดการ</button>
+  </div>
+  <div class="kpis">
+    <div class="kpi k0"><div class="n" id="k0">—</div><div class="l">ทั้งหมดที่ต้องติดตาม</div></div>
+    <div class="kpi k1"><div class="n" id="k1">—</div><div class="l">มี Deal<br>f/u เลยมาแล้ว</div></div>
+    <div class="kpi k2"><div class="n" id="k2">—</div><div class="l">ไม่มี Deal<br>f/u เลยมาแล้ว</div></div>
+    <div class="kpi k3"><div class="n" id="k3">—</div><div class="l">ไม่มีนัด f/u<br>/ ติดต่อไม่ได้</div></div>
+  </div>
+  <div class="toolbar">
+    <div class="tabs">
+      <button class="tab on" onclick="setTab('all',this)">ทั้งหมด</button>
+      <button class="tab" onclick="setTab('A',this)">มี Deal — f/u เลย</button>
+      <button class="tab" onclick="setTab('B',this)">ไม่มี Deal — f/u เลย</button>
+      <button class="tab" onclick="setTab('C',this)">ไม่มีนัด / ติดไม่ได้</button>
+    </div>
+    <input class="search" id="srch" placeholder="ค้นหาชื่อลูกค้า / พนักงาน..." oninput="render()">
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th style="width:24%">ลูกค้า</th>
+        <th style="width:13%">พนักงาน</th>
+        <th style="width:8%">ช่องทาง</th>
+        <th style="width:14%">กลุ่ม</th>
+        <th style="width:11%">ผลล่าสุด</th>
+        <th style="width:10%">นัด f/u</th>
+        <th style="width:7%">ค้าง</th>
+        <th style="width:13%">หมายเหตุ</th>
+      </tr></thead>
+      <tbody id="tb"><tr><td colspan="8" class="empty">กรอก token แล้วกด "ดึงข้อมูล Venio"</td></tr></tbody>
+    </table>
+  </div>
+  <div class="sbar"><span class="dot" id="dot"></span><span id="sb">พร้อมใช้งาน</span></div>
+  <div class="sumbox" id="sumbox">
+    <h3 style="font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">สรุปสำหรับผู้จัดการฝ่ายขาย</h3>
+    <div class="sumtext" id="sumtext"></div>
+    <button class="btn" style="margin-top:10px" onclick="copySum()">Copy ข้อความ</button>
+  </div>
+</div>
+<script>
+const NOW=new Date();
+let all=[],activeTab='all';
+document.getElementById('de').value=NOW.toISOString().slice(0,10);
+function classify(c){const noFU=!c.dateFollowUp;const fu=c.dateFollowUp?new Date(c.dateFollowUp):null;const fuPast=fu&&fu<NOW;const noAns=['No Answer','Not respond'].includes(c.outcomeName);if(c.actionName==='Unqualifed')return null;if(c.dealId&&fuPast)return 'A';if(!c.dealId&&fuPast)return 'B';if(noFU||noAns)return 'C';return null;}
+const GRP={A:{label:'มี Deal — f/u เลย',cls:'br'},B:{label:'ไม่มี Deal — f/u เลย',cls:'bo'},C:{label:'ไม่มีนัด / ติดไม่ได้',cls:'bb'}};
+function daysPast(d){if(!d)return null;const diff=Math.floor((NOW-new Date(d))/86400000);return diff>0?diff:null;}
+async function load(){
+  const tok=document.getElementById('tok').value.trim();
+  if(!tok){setStatus('กรุณากรอก token ก่อน','err');return;}
+  const ds=document.getElementById('ds').value;const de=document.getElementById('de').value;
+  const btn=document.getElementById('loadBtn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span> กำลังดึง...';
+  setStatus('กำลังเชื่อมต่อ...','');
+  document.getElementById('tb').innerHTML='<tr><td colspan="8" class="empty">กำลังโหลด...</td></tr>';
+  try{
+    const res=await fetch('/api/conversations',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({dateStart:ds,dateEnd:de})});
+    if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.message||'HTTP '+res.status);}
+    const j=await res.json();const raw=j?.data?.value?.data||[];
+    all=raw.map(c=>({...c,_g:classify(c)})).filter(c=>c._g);
+    setStatus('ดึงข้อมูลสำเร็จ — '+raw.length+' conversations | ต้องติดตาม '+all.length+' รายการ','ok');render();
+  }catch(e){
+    setStatus('เกิดข้อผิดพลาด: '+e.message,'err');
+    document.getElementById('tb').innerHTML='<tr><td colspan="8" class="empty">ดึงข้อมูลไม่ได้ — ตรวจสอบ token</td></tr>';
+  }finally{btn.disabled=false;btn.textContent='ดึงข้อมูล Venio';}
+}
+function setStatus(msg,type){document.getElementById('sb').textContent=msg;document.getElementById('dot').className='dot'+(type?' '+type:'');}
+function setTab(t,el){activeTab=t;document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));el.classList.add('on');render();}
+function getFiltered(){const q=document.getElementById('srch').value.toLowerCase();return all.filter(r=>{if(activeTab!=='all'&&r._g!==activeTab)return false;if(q&&!(r.customerName||'').toLowerCase().includes(q)&&!(r.fullname||'').toLowerCase().includes(q))return false;return true;}).sort((a,b)=>{const da=a.dateFollowUp?new Date(a.dateFollowUp):new Date(9e15);const db=b.dateFollowUp?new Date(b.dateFollowUp):new Date(9e15);return da-db;});}
+function render(){
+  const rows=getFiltered();
+  document.getElementById('k0').textContent=all.length;
+  document.getElementById('k1').textContent=all.filter(r=>r._g==='A').length;
+  document.getElementById('k2').textContent=all.filter(r=>r._g==='B').length;
+  document.getElementById('k3').textContent=all.filter(r=>r._g==='C').length;
+  if(!rows.length){document.getElementById('tb').innerHTML='<tr><td colspan="8" class="empty">ไม่มีข้อมูล</td></tr>';return;}
+  document.getElementById('tb').innerHTML=rows.map(r=>{const g=GRP[r._g];const days=r.dateFollowUp?daysPast(r.dateFollowUp):null;const urg=days!==null&&days>=7;const warn=days!==null&&days>0&&days<7;const fuStr=r.dateFollowUp?r.dateFollowUp.slice(0,10):'—';const daysStr=days?'<span style="color:var(--red);font-size:11px;font-weight:500">'+days+' วัน</span>':'—';const note=(r.description||'').slice(0,30)+((r.description||'').length>30?'…':'');const name=(r.customerName||'').trim();return '<tr class="'+(urg?'urg':warn?'warn':'')+'"><td title="'+name+'">'+name+'</td><td>'+(r.fullname||'')+'</td><td>'+(r.typeName||'—')+'</td><td><span class="badge '+g.cls+'">'+g.label+'</span></td><td style="font-size:12px;color:var(--text2)">'+(r.outcomeName||'—')+'</td><td style="font-size:12px">'+fuStr+'</td><td>'+daysStr+'</td><td title="'+(r.description||'')+'" style="font-size:12px;color:var(--text2)">'+note+'</td></tr>';}).join('');
+}
+function toggleSum(){const b=document.getElementById('sumbox');b.classList.toggle('show');if(!b.classList.contains('show'))return;const A=all.filter(r=>r._g==='A').sort((a,b)=>new Date(a.dateFollowUp)-new Date(b.dateFollowUp));const B=all.filter(r=>r._g==='B').sort((a,b)=>new Date(a.dateFollowUp)-new Date(b.dateFollowUp));const C=all.filter(r=>r._g==='C');const sm={};all.forEach(r=>{sm[r.fullname]=(sm[r.fullname]||0)+1;});const top=Object.entries(sm).sort((a,b)=>b[1]-a[1]);const date=NOW.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});const fmt=arr=>arr.slice(0,10).map(r=>'  • '+(r.customerName||'').trim()+' ('+r.fullname+') — นัด '+(r.dateFollowUp?.slice(0,10)||'ไม่มี')+(daysPast(r.dateFollowUp)?' ค้าง '+daysPast(r.dateFollowUp)+' วัน':'')).join('\n')+(arr.length>10?'\n  ...และอีก '+(arr.length-10)+' ราย':'');document.getElementById('sumtext').textContent='สรุปผู้จัดการฝ่ายขาย — '+date+'\n\n🔴 มี Deal แต่ f/u เลยมาแล้ว ('+A.length+' ราย)\n'+(fmt(A)||'  — ไม่มี')+'\n\n🟡 ไม่มี Deal แต่ f/u เลยมาแล้ว ('+B.length+' ราย)\n'+(fmt(B)||'  — ไม่มี')+'\n\n🔵 ไม่มีนัด f/u / ติดต่อไม่ได้ล่าสุด ('+C.length+' ราย)\n'+(fmt(C)||'  — ไม่มี')+'\n\n👤 พนักงาน (แชทค้างทั้งหมด)\n'+top.map(([s,n])=>'  • '+s+': '+n+' แชท').join('\n');}
+function copySum(){navigator.clipboard.writeText(document.getElementById('sumtext').textContent).then(()=>{const btn=event.target;btn.textContent='Copied!';setTimeout(()=>{btn.textContent='Copy ข้อความ';},2000);});}
+function doExport(){if(!all.length){alert('ยังไม่มีข้อมูล');return;}const rows=getFiltered();const hdr=['ลูกค้า','พนักงาน','ช่องทาง','กลุ่ม','ผลล่าสุด','นัด f/u','ค้าง(วัน)','dealId','หมายเหตุ'];const lines=rows.map(r=>{const days=r.dateFollowUp?daysPast(r.dateFollowUp):'';return[(r.customerName||'').trim(),r.fullname||'',r.typeName||'',GRP[r._g]?.label||'',r.outcomeName||'',r.dateFollowUp?.slice(0,10)||'',days||'',r.dealId||'',r.description||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',');});const csv='\uFEFF'+[hdr.join(','),...lines].join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='venio_followup_'+NOW.toISOString().slice(0,10)+'.csv';a.click();}
+</script>
+</body>
+</html>
