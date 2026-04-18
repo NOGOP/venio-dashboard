@@ -1,11 +1,33 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import requests, os
+import requests, os, sqlite3, json
+from datetime import datetime
 
 app = Flask(__name__, static_folder='static')
 CORS(app)
 
 SUB_KEY = '78f32c698e2c466bb2405d9e7a936799'
+DB = 'chats.db'
+
+def init_db():
+    con = sqlite3.connect(DB)
+    con.execute('''CREATE TABLE IF NOT EXISTS chats (
+        id TEXT PRIMARY KEY,
+        room_id TEXT,
+        platform TEXT,
+        customer_name TEXT,
+        customer_id TEXT,
+        last_message TEXT,
+        last_message_time TEXT,
+        last_reply_time TEXT,
+        staff_name TEXT,
+        status TEXT DEFAULT 'unanswered',
+        created_at TEXT
+    )''')
+    con.commit()
+    con.close()
+
+init_db()
 
 @app.route('/')
 def index():
@@ -26,11 +48,63 @@ def conversations():
     )
     return jsonify(resp.json()), resp.status_code
 
+@app.route('/webhook/venio', methods=['POST'])
+def webhook():
+    data = request.get_json(silent=True) or {}
+    topic = data.get('topic', '')
+    event = data.get('event', '')
+
+    if topic == 'Chat' and event == 'Message':
+        msg = data.get('data', {}).get('ChatMessage', {})
+        room_id = msg.get('roomId', '')
+        platform = msg.get('platform', '')
+        content = msg.get('content', '')
+        timestamp = msg.get('timestamp', '')
+        user = msg.get('user', {})
+        user_type = user.get('type', '')
+        user_name = user.get('displayName', '')
+
+        con = sqlite3.connect(DB)
+        existing = con.execute('SELECT * FROM chats WHERE room_id=?', (room_id,)).fetchone()
+
+        now = datetime.utcnow().isoformat()
+
+        if user_type == 'customer':
+            if existing:
+                con.execute('''UPDATE chats SET
+                    last_message=?, last_message_time=?, status='unanswered'
+                    WHERE room_id=?''', (content, now, room_id))
+            else:
+                con.execute('''INSERT INTO chats
+                    (id, room_id, platform, customer_name, last_message, last_message_time, status, created_at)
+                    VALUES (?,?,?,?,?,?,'unanswered',?)''',
+                    (room_id, room_id, platform, user_name, content, now, now))
+        elif user_type == 'agent':
+            if existing:
+                con.execute('''UPDATE chats SET
+                    last_reply_time=?, staff_name=?, status='answered'
+                    WHERE room_id=?''', (now, user_name, room_id))
+
+        con.commit()
+        con.close()
+
+    return jsonify({'ok': True}), 200
+
+@app.route('/api/chats', methods=['GET'])
+def get_chats():
+    con = sqlite3.connect(DB)
+    rows = con.execute('SELECT * FROM chats ORDER BY last_message_time DESC').fetchall()
+    con.close()
+    cols = ['id','room_id','platform','customer_name','customer_id',
+            'last_message','last_message_time','last_reply_time',
+            'staff_name','status','created_at']
+    return jsonify([dict(zip(cols, r)) for r in rows])
+
 @app.route('/api/token', methods=['POST'])
 def get_token():
     resp = requests.post(
         'https://api.gofive.co.th/authorization/connect/token',
-        headers={'Ocp-Apim-Subscription-Key': SUB_KEY},
+        headers={'Ocp-Apim-Subscription-Key': '78f32c698e2c466bb2405d9e7a936799'},
         data={
             'grant_type': 'client_credentials',
             'client_id': os.environ.get('CLIENT_ID', ''),
