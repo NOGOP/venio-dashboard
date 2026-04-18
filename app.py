@@ -20,7 +20,7 @@ def conversations():
         headers={
             'Content-Type': 'application/json',
             'Authorization': token,
-            'Ocp-Apim-Subscription-Key': SUB_KEY
+            'Ocp-Apim-Subscription-Key': '78f32c698e2c466bb2405d9e7a936799'
         },
         json=body
     )
